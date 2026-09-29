@@ -1,0 +1,67 @@
+<section class="block" aria-labelledby="hours-title">
+  <h2 id="hours-title">Ближайшие сутки</h2>
+  <ol class="hours">
+    {each hours as hour (hour.key)}
+      <li>
+        <span class="clock">{hour.time}</span>
+        <span class="symbol" aria-hidden="true">{hour.symbol}</span>
+        <span class="temp">{hour.temperature}</span>
+        <span class="rain">{hour.rain}</span>
+        <span class="sr">{hour.label}</span>
+      </li>
+    {/each}
+  </ol>
+</section>
+
+<style>
+  .hours {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    list-style: none;
+    margin: 0;
+    padding: 0.2rem 0 0.7rem;
+  }
+  .hours li {
+    scroll-snap-align: start;
+    flex: none;
+    min-width: 4.6rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.15rem;
+    padding: 0.7rem 0.4rem;
+    border: 1px solid #c5d5de;
+    border-radius: 12px;
+    background: #f7fbfc;
+  }
+</style>
+
+<look>
+  .block
+    stack 0.65rem
+
+  h2
+    flush
+    size 1.2rem
+    weight 700
+    font serif
+
+  .clock
+    size 0.85rem
+    text #4d616b
+
+  .symbol
+    size 1.25rem
+    leading 1.2
+
+  .temp
+    weight 700
+
+  .rain
+    size 0.8rem
+    text #4d616b
+
+  .sr
+    clip
+</look>

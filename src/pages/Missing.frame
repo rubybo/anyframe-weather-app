@@ -1,0 +1,34 @@
+<section class="page">
+  <h1>Страница не найдена</h1>
+  <p>Такого адреса нет.</p>
+  <p><a href={reverse("home")}>К прогнозу</a></p>
+</section>
+
+<look>
+  .page
+    stack 0.8rem
+    center
+    max 40rem
+    pad 2.5rem 1.25rem
+    font sans
+    text #142028
+    scheme light
+    border-box
+
+  h1
+    flush
+    size 2.2rem
+    weight 700
+    font serif
+    leading 1.1
+
+  p
+    flush
+    leading 1.5
+
+  a
+    text #0f6e8c
+    when focus
+      outline 3px solid #0f6e8c
+      offset 2px
+</look>

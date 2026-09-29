@@ -1,0 +1,57 @@
+<section class="block" aria-labelledby="days-title">
+  <h2 id="days-title">7 дней</h2>
+  <ol class="days">
+    {each days as day (day.key)}
+      <li>
+        <span class="name">{day.name}</span>
+        <span class="symbol" aria-hidden="true">{day.symbol}</span>
+        <span class="label">{day.label}</span>
+        <span class="rain">{day.rain}</span>
+        <span class="range">{day.temperature}</span>
+      </li>
+    {/each}
+  </ol>
+</section>
+
+<look>
+  .block
+    stack 0.65rem
+
+  h2
+    flush
+    size 1.2rem
+    weight 700
+    font serif
+
+  .days
+    bare
+    stack 0
+
+  li
+    row 0.75rem
+    align center
+    line #d5e2e8
+    pad 0.75rem 0
+    motion rise
+
+  .name
+    width 6.5rem
+    weight 700
+
+  .symbol
+    size 1.2rem
+    fixed
+
+  .label
+    grow
+    text #3d525c
+
+  .rain
+    text #4d616b
+    size 0.9rem
+    fixed
+
+  .range
+    weight 700
+    fixed
+</look>

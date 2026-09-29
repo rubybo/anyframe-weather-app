@@ -1,0 +1,291 @@
+<script>
+  import Current from "../components/Current.frame";
+  import HourStrip from "../components/HourStrip.frame";
+  import DayList from "../components/DayList.frame";
+  import { forecastFor, geocode, placeLabel } from "../weather";
+
+  const matches = state([]);
+  const status = state("idle");
+  const message = state("");
+  const place = state(null);
+  const forecast = state(null);
+  const heading = derived(() => {
+    const selected = place();
+    return selected ? placeLabel(selected) : "";
+  });
+
+  const find = action(async (data) => {
+    message("");
+    const name = String(data.get("city") ?? "").trim();
+    if (name.length < 2) throw new Error("Введите хотя бы 2 буквы.");
+    const found = await geocode(name);
+    if (found.length === 0) throw new Error("Такой город не найден.");
+    matches(found);
+    if (found.length === 1) openPlace(found[0]);
+  });
+
+  function openPlace(hit) {
+    matches([]);
+    const params = new URLSearchParams({
+      lat: String(hit.latitude),
+      lon: String(hit.longitude),
+      name: hit.name,
+      country: hit.country,
+      admin: hit.admin1,
+    });
+    route(`/?${params.toString()}`);
+  }
+
+  function coordinate(value, limit) {
+    if (typeof value !== "string" || !/^-?\d+(?:\.\d+)?$/.test(value)) return null;
+    const number = Number(value);
+    if (!Number.isFinite(number) || Math.abs(number) > limit) return null;
+    return number;
+  }
+
+  function nearby() {
+    message("");
+    if (!navigator.geolocation) {
+      message("Браузер не сообщает координаты.");
+      return;
+    }
+    status("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        openPlace({
+          id: 0,
+          name: "Рядом со мной",
+          country: "",
+          admin1: "",
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          label: "Рядом со мной",
+        });
+      },
+      () => {
+        status(forecast() ? "ready" : "idle");
+        message("Не удалось определить место. Найдите город или разрешите геолокацию.");
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+    );
+  }
+
+  effect(() => {
+    const params = new URLSearchParams(route().search);
+    const latitude = coordinate(params.get("lat"), 90);
+    const longitude = coordinate(params.get("lon"), 180);
+    if (latitude == null || longitude == null) {
+      place(null);
+      forecast(null);
+      status("idle");
+      return;
+    }
+    const nextPlace = {
+      name: params.get("name") || "Выбранное место",
+      country: params.get("country") || "",
+      admin1: params.get("admin") || "",
+      latitude,
+      longitude,
+    };
+    const controller = new AbortController();
+    status("loading");
+    message("");
+    forecastFor(latitude, longitude, controller.signal).then(
+      (view) => {
+        if (controller.signal.aborted) return;
+        place(nextPlace);
+        forecast(view);
+        status("ready");
+        const title = placeLabel(nextPlace);
+        document.title = `${view.current.temperature} · ${title}`;
+        document.querySelector('meta[name="description"]')?.setAttribute("content", `${title}: ${view.current.label}, ${view.current.temperature}.`);
+      },
+      (error) => {
+        if (controller.signal.aborted) return;
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        status("error");
+        message(error instanceof Error ? error.message : "Не удалось загрузить прогноз.");
+      },
+    );
+    return () => controller.abort();
+  });
+</script>
+
+<section class="page" aria-busy={status === "loading"}>
+  <header class="top">
+    <h1>Погода</h1>
+    <form method="post" action={find} role="search" aria-busy={find.pending}>
+      <label class="field">
+        Город
+        <span class="row">
+          <input
+            type="text"
+            name="city"
+            required
+            minlength="2"
+            autocomplete="address-level2"
+            enterkeyhint="search"
+            placeholder="Например, Казань"
+            aria-invalid={find.error ? "true" : "false"}
+          />
+          <button type="submit" disabled={find.pending}>Найти</button>
+        </span>
+      </label>
+      {if find.error}
+        <p role="alert">{find.error}</p>
+      {/if}
+    </form>
+    <button type="button" class="ghost" @click={nearby}>Рядом со мной</button>
+    {if message}
+      <p role="status">{message}</p>
+    {/if}
+    {if matches.length}
+      <ul class="matches">
+        {each matches as hit (hit.id)}
+          <li><button type="button" @click={() => openPlace(hit)}>{hit.label}</button></li>
+        {/each}
+      </ul>
+    {/if}
+  </header>
+
+  {if status === "loading"}
+    <p class="note" role="status">Загружаю прогноз…</p>
+  {/if}
+  {if status === "error"}
+    <p class="note" role="alert">{message}</p>
+  {/if}
+  {if forecast}
+    <Current title={heading} current={forecast.current} />
+    <HourStrip hours={forecast.hours} />
+    <DayList days={forecast.days} />
+  {else}
+    {if status === "idle"}
+      {if matches.length === 0}
+        <p class="note">Найдите город, чтобы увидеть прогноз на неделю.</p>
+      {/if}
+    {/if}
+  {/if}
+  <p class="credit"><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Данные Open-Meteo</a></p>
+</section>
+
+<look>
+  .page
+    stack 1.5rem
+    center
+    max 46rem
+    pad 1.5rem 1.25rem
+    tall 100vh
+    font sans
+    text #142028
+    scheme light
+    border-box
+
+  h1
+    flush
+    size 2.4rem
+    weight 700
+    tracking -0.03em
+    leading 1.05
+    font serif
+
+  .top
+    stack 0.85rem
+
+  .field
+    stack 0.35rem
+    size 0.95rem
+
+  .row
+    row 0.5rem
+    align center
+
+  input
+    grow
+    tall 3rem
+    pad 0 0.75rem
+    border 1px solid #8aa0ab
+    radius 10px
+    fill #f7fbfc
+    font inherit
+    size 1rem
+    when focus
+      outline 3px solid #0f6e8c
+      offset 2px
+    when invalid
+      border 1px solid #9a3412
+    when coarse
+      tall 3.25rem
+
+  button
+    fill #0f6e8c
+    text #f4fafc
+    font sans
+    size 1rem
+    pointer
+    tall 3rem
+    pad 0 1rem
+    border 0
+    radius 10px
+    fixed
+    motion press
+    when hover
+      fill #0c5a73
+    when focus
+      outline 3px solid #0f6e8c
+      offset 2px
+    when disabled
+      fill #8aa0ab
+    when coarse
+      tall 3.25rem
+
+  .ghost
+    fill none
+    text #0f6e8c
+    border 1px solid #0f6e8c
+    when hover
+      fill #e7f2f6
+
+  [role="alert"]
+    flush
+    text #9a3412
+    leading 1.4
+
+  [role="status"]
+    flush
+    text #3d525c
+    leading 1.4
+
+  .note
+    flush
+    pad 1rem
+    border 1px dashed #8aa0ab
+    radius 12px
+    text #3d525c
+    leading 1.5
+
+  .matches
+    bare
+    stack 0.35rem
+
+  .matches button
+    row
+    align center
+    justify start
+    width 100%
+    fill #f7fbfc
+    text #142028
+    border 1px solid #c5d5de
+    when hover
+      fill #e7f2f6
+
+  .credit
+    flush
+    size 0.85rem
+    text #4d616b
+
+  a
+    text #0f6e8c
+    when focus
+      outline 3px solid #0f6e8c
+      offset 2px
+</look>

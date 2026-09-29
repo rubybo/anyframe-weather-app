@@ -1,0 +1,83 @@
+<article class="now">
+  <h2>{title}</h2>
+  <p class="when">Сейчас, данные на {current.observed}</p>
+  <p class="hero">
+    <span class="symbol" aria-hidden="true">{current.symbol}</span>
+    <span class="temp">{current.temperature}</span>
+  </p>
+  <p class="label">{current.label}</p>
+  <dl>
+    <div>
+      <dt>Ощущается</dt>
+      <dd>{current.feels}</dd>
+    </div>
+    <div>
+      <dt>Влажность</dt>
+      <dd>{current.humidity}</dd>
+    </div>
+    <div>
+      <dt>Ветер</dt>
+      <dd>{current.wind}</dd>
+    </div>
+  </dl>
+</article>
+
+<look>
+  .now
+    stack 0.35rem
+    fill #f7fbfc
+    pad 1.25rem
+    radius 16px
+    border 1px solid #c5d5de
+    motion fade
+
+  h2
+    flush
+    size 1.35rem
+    weight 700
+    leading 1.2
+    font serif
+
+  .when
+    flush
+    size 0.9rem
+    text #4d616b
+
+  .hero
+    row 0.75rem
+    align baseline
+    flush
+    pad 0.35rem 0
+
+  .symbol
+    size 2.4rem
+    leading 1
+
+  .temp
+    size 4.25rem
+    weight 700
+    tracking -0.04em
+    leading 0.95
+    font serif
+
+  .label
+    flush
+    size 1.15rem
+
+  dl
+    flush
+    pad 0.85rem 0
+    stack 0
+
+  div
+    spread
+    line #d5e2e8
+    pad 0.55rem 0
+
+  dt
+    text #4d616b
+
+  dd
+    flush
+    weight 600
+</look>
